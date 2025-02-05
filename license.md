@@ -27,9 +27,9 @@ For commercial use (e.g., businesses, SaaS, proprietary software), a separate **
 
 ---
 
-## Exclusive App Store Rights
+## Exclusive App Store & SideStore Connect Rights
 
-StikQR is **exclusively distributed on the App Store by 0-Blu**. No third party is permitted to publish or distribute StikQR on the App Store without explicit permission.
+StikQR is **exclusively distributed on the App Store and SideStore Connect by 0-Blu**. No third party is permitted to publish or distribute StikQR on the App Store or SideStore Connect without explicit permission.
 
 ---
 
@@ -37,7 +37,7 @@ StikQR is **exclusively distributed on the App Store by 0-Blu**. No third party 
 
 ✅ **Personal, educational, and open-source use** → Free under AGPLv3  
 💰 **Business, SaaS, or closed-source use** → Requires a paid license  
-🛑 **App Store distribution is exclusive to 0-Blu**  
+🛑 **App Store & SideStore Connect distribution is exclusive to 0-Blu**  
 
 For any questions or licensing inquiries, feel free to reach out on Discord!
 My Discord username is BluStik
