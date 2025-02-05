@@ -188,6 +188,173 @@ struct HelpView: View {
     }
 }
 
+struct GenerateQRView: View {
+    @State private var text = ""
+    @State private var qrImage: UIImage?
+    @State private var showShareSheet = false
+    @State private var showSaveConfirmation = false
+    @State private var showingHelp = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(.systemGray6))
+                    .frame(height: 300)
+                    .padding()
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.blue.opacity(0.4), lineWidth: 2)
+                            .padding()
+                    )
+                
+                if let image = qrImage {
+                    Image(uiImage: image)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 200)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                } else {
+                    Image(systemName: "qrcode")
+                        .font(.system(size: 50))
+                        .foregroundColor(.blue.opacity(0.3))
+                }
+            }
+            
+            TextField("Enter website URL or text", text: $text)
+                .textFieldStyle(PlainTextFieldStyle())
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                .padding(.horizontal)
+                .autocapitalization(.none)
+            
+            if !text.isEmpty {
+                HStack {
+                    Button(action: { showShareSheet = true }) {
+                        Label("Share QR Code", systemImage: "square.and.arrow.up")
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    
+                    Button(action: {
+                        if let image = qrImage {
+                            saveImageToCameraRoll(image: image)
+                        }
+                    }) {
+                        Label("Save to Photos", systemImage: "square.and.arrow.down")
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.green)
+                            .foregroundColor(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            Spacer()
+        }
+        .navigationBarItems(trailing: Button(action: { showingHelp = true }) {
+            Image(systemName: "questionmark.circle")
+        })
+        .sheet(isPresented: $showingHelp) {
+            GenerateQRHelpView(isPresented: $showingHelp)
+        }
+        .onChange(of: text) { _ in
+            qrImage = generateQRCode(from: text)
+        }
+        .sheet(isPresented: $showShareSheet) {
+            if let image = qrImage {
+                ShareSheet(activityItems: [image])
+            }
+        }
+        .alert(isPresented: $showSaveConfirmation) {
+            Alert(title: Text("Saved"), message: Text("The QR code has been saved to your photos."), dismissButton: .default(Text("OK")))
+        }
+    }
+    
+    private func generateQRCode(from string: String) -> UIImage? {
+        let context = CIContext()
+        guard let filter = CIFilter(name: "CIQRCodeGenerator") else { return nil }
+        
+        filter.setValue(string.data(using: .utf8), forKey: "inputMessage")
+        filter.setValue("H", forKey: "inputCorrectionLevel")
+        
+        guard let outputImage = filter.outputImage else { return nil }
+        
+        let scale = UIScreen.main.scale
+        let transformScale = CGAffineTransform(scaleX: scale, y: scale)
+        let scaledImage = outputImage.transformed(by: transformScale)
+        
+        guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
+    }
+    
+    private func saveImageToCameraRoll(image: UIImage) {
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+        showSaveConfirmation = true
+    }
+}
+
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content) -> some View {
+        
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
+    }
+}
+
+struct GenerateQRHelpView: View {
+    @Binding var isPresented: Bool
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section(header: Text("How to Generate")) {
+                    Text("1. Enter text or URL in the input field")
+                    Text("2. QR code generates automatically")
+                    Text("3. Use share or save buttons to export")
+                }
+                
+                Section(header: Text("What You Can Share")) {
+                    Text("• Website URLs")
+                    Text("• Plain text messages")
+                    Text("• and much more!")
+                }
+                
+                Section(header: Text("Tips")) {
+                    Text("• Keep content concise for better scanning")
+                    Text("• Test the QR code before sharing")
+                    Text("• Save important codes to Photos")
+                }
+                Section(header: Text("About")) {
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown") (\(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"))")
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            .navigationTitle("QR Generator Help")
+            .navigationBarItems(trailing: Button("Done") {
+                isPresented = false
+            })
+        }
+    }
+}
+
 struct ContentView: View {
     @AppStorage("scannedCodes") private var storedCodes: Data = Data()
     @State private var scannedCodes: [ScannedCode] = []
@@ -196,40 +363,66 @@ struct ContentView: View {
     @State private var isTorchOn = false
     @State private var showingHelp = false
     @State private var showingPhotoPicker = false
+    @State private var selectedTab = 0
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                scannerSection
-                scannedCodesList
-                actionButtons
-            }
-            .navigationTitle("StikQR")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingHelp = true }) {
-                        Image(systemName: "questionmark.circle")
+        TabView(selection: $selectedTab) {
+            NavigationView {
+                VStack(spacing: 0) {
+                    scannerSection
+                    scannedCodesList
+                    actionButtons
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text("Scan")
+                            .font(.headline)
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: { showingHelp = true }) {
+                            Image(systemName: "questionmark.circle")
+                        }
                     }
                 }
             }
-            .sheet(item: $exportFile) { file in
-                ShareSheet(activityItems: [file.url])
+            .tabItem {
+                Label("Scan", systemImage: "qrcode.viewfinder")
             }
-            .sheet(isPresented: $showingHelp) {
-                HelpView(isPresented: $showingHelp)
+            .tag(0)
+            
+            NavigationView {
+                GenerateQRView()
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .principal) {
+                            Text("Generate")
+                                .font(.headline)
+                        }
+                    }
             }
-            .sheet(isPresented: $showingPhotoPicker) {
-                ImagePicker(completion: handleSelectedImage)
+            .tabItem {
+                Label("Generate", systemImage: "qrcode")
             }
-            .alert("Clear All Codes?", isPresented: $showClearAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Clear All", role: .destructive) {
-                    scannedCodes.removeAll()
-                    saveToStorage()
-                }
-            } message: {
-                Text("This will remove all scanned QR codes. This action cannot be undone.")
+            .tag(1)
+        }
+        .sheet(item: $exportFile) { file in
+            ShareSheet(activityItems: [file.url])
+        }
+        .sheet(isPresented: $showingHelp) {
+            HelpView(isPresented: $showingHelp)
+        }
+        .sheet(isPresented: $showingPhotoPicker) {
+            ImagePicker(completion: handleSelectedImage)
+        }
+        .alert("Clear All Codes?", isPresented: $showClearAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All", role: .destructive) {
+                scannedCodes.removeAll()
+                saveToStorage()
             }
+        } message: {
+            Text("This will remove all scanned QR codes. This action cannot be undone.")
         }
         .preferredColorScheme(.dark)
         .onAppear(perform: loadFromStorage)
