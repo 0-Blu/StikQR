@@ -22,7 +22,6 @@ jobs:
           xcodebuild -version
           
       - name: Build StikQR
-        working-directory: ./StikQR
         run: |
           xcodebuild -project StikQR.xcodeproj \
             -scheme StikQR \
