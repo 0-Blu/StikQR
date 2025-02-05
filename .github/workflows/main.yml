@@ -7,12 +7,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: 'macos-13'  
-            xcode: '15.1'  
+          - os: 'macos-13'
+            xcode: '15.1'
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4  
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           
@@ -38,7 +38,7 @@ jobs:
           rm -rf Payload
           
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: iOS Build
           path: StikQR.ipa
