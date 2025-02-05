@@ -32,6 +32,35 @@ class QRScannerViewController: UIViewController {
         setupCaptureSession()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        startCamera()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if captureSession?.isRunning == false {
+            startCamera()
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        stopCamera()
+    }
+    
+    private func startCamera() {
+        DispatchQueue.global(qos: .background).async { [weak self] in
+            self?.captureSession?.startRunning()
+        }
+    }
+    
+    private func stopCamera() {
+        if captureSession?.isRunning == true {
+            captureSession?.stopRunning()
+        }
+    }
+    
     private func setupCaptureSession() {
         let captureSession = AVCaptureSession()
         
@@ -66,9 +95,7 @@ class QRScannerViewController: UIViewController {
         self.captureSession = captureSession
         self.previewLayer = previewLayer
         
-        DispatchQueue.global(qos: .background).async {
-            captureSession.startRunning()
-        }
+        startCamera()
     }
     
     func toggleTorch(isOn: Bool) {
@@ -81,13 +108,6 @@ class QRScannerViewController: UIViewController {
             device.unlockForConfiguration()
         } catch {
             print("Torch could not be configured: \(error)")
-        }
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if captureSession?.isRunning == true {
-            captureSession?.stopRunning()
         }
     }
 }
