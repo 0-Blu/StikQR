@@ -1,48 +1,44 @@
 name: iOS Build
 on: [push, pull_request]
-
 jobs:
   build:
-    name: Build and upload StikQR.
+    name: Build and upload StikQR
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: 'macos-15'
-            version: '15.1'
-
+          - os: 'macos-13'  
+            xcode: '15.1'  
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4  
         with:
           submodules: recursive
-
+          
       - name: Set Up Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_${{ matrix.version }}.app
+          sudo xcode-select -s /Applications/Xcode_${{ matrix.xcode }}.app
           xcodebuild -version
-
+          
       - name: Build StikQR
         run: |
-          xcodebuild -workspace StikQR.xcproject -scheme StikQR -sdk iphoneos -configuration Release clean build
-
+          xcodebuild -project StikQR.xcodeproj -scheme StikQR -sdk iphoneos -configuration Release clean build CODE_SIGNING_ALLOWED=NO
+          
       - name: Strip Debug Symbols
         run: |
-          cd build/Release-iphoneos/StikQR.app
+          cd build/Release-iphoneos
           find . -name "*.dSYM" -exec rm -rf {} \;
-
-      - name: Convert to IPA 1
-        run: mkdir -p Payload
-
-      - name: Convert to IPA 2
-        run: cp -R build/Release-iphoneos/StikQR.app Payload/
-
-      - name: Convert to IPA 3
-        run: zip -r StikQR.ipa Payload
-
+          
+      - name: Create IPA
+        run: |
+          mkdir Payload
+          cp -R build/Release-iphoneos/StikQR.app Payload/
+          zip -r StikQR.ipa Payload
+          rm -rf Payload
+          
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: iOS Build
-          path: ./StikQR.ipa
+          path: StikQR.ipa
