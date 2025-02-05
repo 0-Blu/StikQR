@@ -23,22 +23,14 @@ jobs:
           
       - name: Build StikQR
         run: |
-          xcodebuild -project StikQR.xcodeproj -scheme StikQR -sdk iphoneos -configuration Release clean build CODE_SIGNING_ALLOWED=NO
-          
-      - name: Strip Debug Symbols
-        run: |
-          cd build/Release-iphoneos
-          find . -name "*.dSYM" -exec rm -rf {} \;
+          xcodebuild -project StikQR.xcodeproj -scheme StikQR -sdk iphoneos -configuration Release clean archive -archivePath build/StikQR.xcarchive CODE_SIGNING_ALLOWED=NO
           
       - name: Create IPA
         run: |
-          mkdir Payload
-          cp -R build/Release-iphoneos/StikQR.app Payload/
-          zip -r StikQR.ipa Payload
-          rm -rf Payload
+          xcodebuild -exportArchive -archivePath build/StikQR.xcarchive -exportOptionsPlist ExportOptions.plist -exportPath build/IPA
           
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: iOS Build
-          path: StikQR.ipa
+          path: build/IPA/StikQR.ipa
