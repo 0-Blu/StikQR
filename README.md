@@ -7,4 +7,6 @@ StikQR is your all-in-one app for scanning, creating, and managing QR codes with
 - Generate custom QR codes for URLs, text, contact details, and more.  
 - Save, organize, and share QR codes effortlessly.  
 
-**Get it on the [App Store](https://apps.apple.com/us/app/stikqr-qr-code-scanner/id6741479535).**  
+See the [Lisence File](lisence.md) for lisence information.
+
+**Get StikQR on the [App Store](https://apps.apple.com/us/app/stikqr-qr-code-scanner/id6741479535).**  
